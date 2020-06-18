@@ -97,10 +97,10 @@ def fingerprint(logcan, sendcan, has_relay):
       cloudlog.warning("Getting VIN & FW versions")
       _, vin = get_vin(logcan, sendcan, bus)
       car_fw = get_fw_versions(logcan, sendcan, bus)
-    cloudlog.warning("car_fw is %s", car_fw)
-    cloudlog.warning( "vin is %s", vin)
+    print("car_fw is ==========", car_fw)
+    print("vin is ==============", vin)
     fw_candidates = match_fw_to_car(car_fw)
-    cloudlog.warning("fw_candidates is %s", fw_candidates)
+    print("fw_candidates is ==================", fw_candidates)
   else:
     vin = VIN_UNKNOWN
     fw_candidates, car_fw = set(), []
@@ -165,7 +165,7 @@ def fingerprint(logcan, sendcan, has_relay):
 
 
 def get_car(logcan, sendcan, has_relay=False):
-  print("has_relay ==============",has_relay)
+  print("has_relay ==============", has_relay)
   candidate, fingerprints, vin, car_fw, source = fingerprint(logcan, sendcan, has_relay)
   print("fingerprint==========", fingerprints, "candidate============", candidate, "car_fw=======", car_fw)
   print("source========", source)
