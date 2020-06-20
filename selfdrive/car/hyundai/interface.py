@@ -306,12 +306,9 @@ class CarInterface(CarInterfaceBase):
     ret.buttonEvents = buttonEvents
 
     events = self.create_common_events(ret)
-    if self.CP.carFingerprint == CAR.KIA_NIRO_EV:
-      if self.CC.longcontrol and self.CS.cruise_buttons and self.CS.cruise_unavail:
-        events.add(EventName.brakeUnavailable)
-    else:
-      if self.CC.longcontrol and self.CS.cruise_unavail:
-        events.add(EventName.brakeUnavailable)
+
+    if self.CC.longcontrol and self.CS.cruise_buttons and self.CS.cruise_unavail:
+      events.add(EventName.brakeUnavailable)
     if abs(ret.steeringAngle) > 90. and EventName.steerTempUnavailable not in events.events:
       events.add(EventName.steerTempUnavailable)
     if self.low_speed_alert and not self.CS.mdps_bus:
