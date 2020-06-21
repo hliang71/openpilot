@@ -614,7 +614,7 @@ EVENTS = {
   EventName.commIssue: {
     ET.SOFT_DISABLE: SoftDisableAlert("Communication Issue between Processes"),
     ET.NO_ENTRY: NoEntryAlert("Communication Issue between Processes",
-                              audible_alert=AudibleAlert.chimeDisengage),
+                              audible_alert=AudibleAlert.chimeWarning1),
   },
 
   EventName.radarCommIssue: {
