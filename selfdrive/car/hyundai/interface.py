@@ -172,14 +172,14 @@ class CarInterface(CarInterfaceBase):
       ret.minSteerSpeed = 0.
     elif candidate in [CAR.KIA_NIRO_HEV, CAR.KIA_NIRO_EV]:
       ret.lateralTuning.init('indi')
-      ret.lateralTuning.indi.innerLoopGain = 4.0
-      ret.lateralTuning.indi.outerLoopGain = 3.0
+      ret.lateralTuning.indi.innerLoopGain = 5.0
+      ret.lateralTuning.indi.outerLoopGain = 3.5
       ret.lateralTuning.indi.timeConstant = 1.0
-      ret.lateralTuning.indi.actuatorEffectiveness = 0.8
+      ret.lateralTuning.indi.actuatorEffectiveness = 1
       #ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1737. + STD_CARGO_KG
       ret.wheelbase = 2.7
-      ret.steerRatio = 13.73   #Spec
+      ret.steerRatio = 16.82   #Spec 13.73
       tire_stiffness_factor = 0.385
       #ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       #ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
