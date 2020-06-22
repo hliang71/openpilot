@@ -179,7 +179,7 @@ class CarInterface(CarInterfaceBase):
       #ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1737. + STD_CARGO_KG
       ret.wheelbase = 2.7
-      ret.steerRatio = 20   #Spec 13.73
+      ret.steerRatio = 24  #Spec 13.73
       tire_stiffness_factor = 0.385
       #ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       #ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
@@ -225,7 +225,7 @@ class CarInterface(CarInterfaceBase):
 
     # steer, gas, brake limitations VS speed
     ret.steerMaxBP = [0.]
-    ret.steerMaxV = [1.3] #[1.0]
+    ret.steerMaxV = [3.0]
     ret.gasMaxBP = [0., 10., 40.]
     ret.gasMaxV = [0.5, 0.5, 0.5]
     ret.brakeMaxBP = [0., 20.]
