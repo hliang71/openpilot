@@ -140,7 +140,7 @@ class SoftDisableAlert(Alert):
     super().__init__("TAKE CONTROL IMMEDIATELY", alert_text_2,
                      AlertStatus.critical, AlertSize.full,
                      Priority.MID, VisualAlert.steerRequired,
-                     AudibleAlert.chimeDisengage, .1, 1., 1.),
+                     AudibleAlert.chimeDisengage, .1, 2., 2.),
 
 
 class ImmediateDisableAlert(Alert):
@@ -148,7 +148,7 @@ class ImmediateDisableAlert(Alert):
     super().__init__(alert_text_1, alert_text_2,
                      AlertStatus.critical, AlertSize.full,
                      Priority.HIGHEST, VisualAlert.steerRequired,
-                     AudibleAlert.chimeDisengage, 0.2, 1., 1.),
+                     AudibleAlert.chimeDisengage, 2.2, 3., 4.),
 
 class EngagementAlert(Alert):
   def __init__(self, audible_alert=True):
