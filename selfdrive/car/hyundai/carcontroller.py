@@ -1,6 +1,6 @@
 from cereal import car
 from common.numpy_fast import clip
-from selfdrive.car.hyundai import apply_std_steer_torque_limits
+from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create_lfa_mfa, \
                                              create_scc11, create_scc12, create_mdps12, \
                                              create_scc13, create_scc14, create_ems11
