@@ -177,7 +177,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.indi.timeConstant = 1.0
       ret.lateralTuning.indi.actuatorEffectiveness = 1.8
       #ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 1737. + STD_CARGO_KG››
+      ret.mass = 1737. + STD_CARGO_KG
       ret.wheelbase = 2.7
       ret.steerRatio = 20  #Spec 13.73
       tire_stiffness_factor = 0.385
