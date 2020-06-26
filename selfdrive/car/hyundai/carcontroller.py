@@ -17,7 +17,7 @@ ACCEL_MAX = 1.5  # 1.5 m/s2
 ACCEL_MIN = -3.0 # 3   m/s2
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 # SPAS steering limits
-STEER_ANG_MAX = 360          # SPAS Max Angle
+STEER_ANG_MAX = 720          # SPAS Max Angle
 STEER_ANG_MAX_RATE = 1.5    # SPAS Degrees per ms
 
 def accel_hysteresis(accel, accel_steady):
