@@ -174,8 +174,8 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.init('indi')
       ret.lateralTuning.indi.innerLoopGain = 5
       ret.lateralTuning.indi.outerLoopGain = 4.6
-      ret.lateralTuning.indi.timeConstant = 1.5
-      ret.lateralTuning.indi.actuatorEffectiveness = 1.35
+      ret.lateralTuning.indi.timeConstant = 1.55
+      ret.lateralTuning.indi.actuatorEffectiveness = 1.25
       #ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1737. + STD_CARGO_KG
       ret.wheelbase = 2.7
