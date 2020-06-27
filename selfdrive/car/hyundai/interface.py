@@ -225,7 +225,7 @@ class CarInterface(CarInterfaceBase):
 
     # steer, gas, brake limitations VS speed
     ret.steerMaxBP = [0.]
-    ret.steerMaxV = [4.0]
+    ret.steerMaxV = [7.0]
     ret.gasMaxBP = [0., 10., 40.]
     ret.gasMaxV = [0.5, 0.5, 0.5]
     ret.brakeMaxBP = [0., 20.]
