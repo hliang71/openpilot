@@ -184,6 +184,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.25
       #ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       #ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+
     elif candidate in [CAR.GRANDEUR, CAR.GRANDEUR_HEV]:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1719. + STD_CARGO_KG
@@ -326,19 +327,19 @@ class CarInterface(CarInterfaceBase):
     if not self.CC.longcontrol and EventName.pedalPressed in events.events:
       events.events.remove(EventName.pedalPressed)
 
-    # handle button presses
-    if self.CC.longcontrol and not self.CC.scc_live:
-      for b in ret.buttonEvents:
+  # handle button presses
+    for b in ret.buttonEvents:
+      # do disable on button down
+      if b.type == ButtonType.cancel and b.pressed:
+        events.add(EventName.buttonCancel)
+      if self.CC.longcontrol and not self.CC.scc_live:
         # do enable on both accel and decel buttons
         if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed:
           events.add(EventName.buttonEnable)
-        # do disable on button down
-        if b.type == ButtonType.cancel and b.pressed:
-          events.add(EventName.buttonCancel)
-      if EventName.wrongCarMode in events.events:
-        events.events.remove(EventName.wrongCarMode)
-      if EventName.pcmDisable in events.events:
-        events.events.remove(EventName.pcmDisable)
+        if EventName.wrongCarMode in events.events:
+          events.events.remove(EventName.wrongCarMode)
+        if EventName.pcmDisable in events.events:
+          events.events.remove(EventName.pcmDisable)
 
     ret.events = events.to_msg()
 
