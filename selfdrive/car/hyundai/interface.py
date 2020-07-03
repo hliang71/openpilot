@@ -172,8 +172,8 @@ class CarInterface(CarInterfaceBase):
       ret.minSteerSpeed = 0.
     elif candidate in [CAR.KIA_NIRO_HEV, CAR.KIA_NIRO_EV]:
       ret.lateralTuning.init('indi')
-      ret.lateralTuning.indi.innerLoopGain = 5.1
-      ret.lateralTuning.indi.outerLoopGain = 3 #4.8
+      ret.lateralTuning.indi.innerLoopGain = 5
+      ret.lateralTuning.indi.outerLoopGain = 3.6 #4.8
       ret.lateralTuning.indi.timeConstant = 1.1 #1.16
       ret.lateralTuning.indi.actuatorEffectiveness = 1.09 #1.13
       #ret.lateralTuning.pid.kf = 0.00005
