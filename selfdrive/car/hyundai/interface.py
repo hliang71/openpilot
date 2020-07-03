@@ -173,7 +173,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate in [CAR.KIA_NIRO_HEV, CAR.KIA_NIRO_EV]:
       ret.lateralTuning.init('indi')
       ret.lateralTuning.indi.innerLoopGain = 5
-      ret.lateralTuning.indi.outerLoopGain = 4 #4.8
+      ret.lateralTuning.indi.outerLoopGain = 4.8 #4.8
       ret.lateralTuning.indi.timeConstant = 1.16 #1.16
       ret.lateralTuning.indi.actuatorEffectiveness = 1.13 #1.13
       #ret.lateralTuning.pid.kf = 0.00005
