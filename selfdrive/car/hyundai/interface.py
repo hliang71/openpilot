@@ -182,7 +182,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15  #Spec 13.73
       tire_stiffness_factor = 0.385
       ret.steerActuatorDelay = 0.3 #0.3
-      ret.steerLimitTimer = 0.2 #0.8
+      ret.steerLimitTimer = 0.1 #0.8
       #ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       #ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
 
