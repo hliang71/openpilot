@@ -322,7 +322,7 @@ FEATURES = {
   # Use E_EMS11 Message for Gas and Brake for Hybrid/ELectric
   "use_elect_ems": [CAR.SONATA_H, CAR.IONIQ_EV_LTD, CAR.KIA_NIRO_EV, CAR.KONA_EV],
   # send LFA MFA message for new HKG models
-  "send_lfa_mfa": [CAR.SONATA, CAR.PALISADE, CAR.SONATA_H, CAR.SANTA_FE, CAR.KIA_NIRO_EV],
+  "send_lfa_mfa": [CAR.SONATA, CAR.PALISADE, CAR.SONATA_H, CAR.SANTA_FE],
   "has_scc13": [], 
   "has_scc14": [], 
 }
