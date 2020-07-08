@@ -159,7 +159,7 @@ class EngagementAlert(Alert):
 
 def below_steer_speed_alert(CP, sm, metric):
   speed = CP.minSteerSpeed * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH)
-  unit = "km/h" if metric else "mi/h"
+  unit = "kph" if metric else "mph"
   return Alert(
     "TAKE CONTROL",
     "Steer Unavailable Below %d %s" % (speed, unit),
@@ -168,7 +168,7 @@ def below_steer_speed_alert(CP, sm, metric):
 
 def calibration_incomplete_alert(CP, sm, metric):
   speed = int(Filter.MIN_SPEED * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH))
-  unit = "km/h" if metric else "mi/h"
+  unit = "kph" if metric else "mph"
   return Alert(
     "Calibration in Progress: %d%%" % sm['liveCalibration'].calPerc,
     "Drive Above %d %s" % (speed, unit),
@@ -439,46 +439,6 @@ EVENTS = {
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 2., 3.),
   },
 
-  EventName.turningIndicatorOn: {
-    ET.WARNING: Alert(
-      "TAKE CONTROL",
-      "Steer Unavailable while Turning",
-      AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .0, .0, .2),
-  },
-
-  EventName.lkasButtonOff: {
-    ET.WARNING: Alert(
-      "lkasButtonOff",
-      "LKAS button off",
-      "",
-      AlertStatus.userPrompt, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .1),
-  },
-
-   EventName.rightBlindspot: {
-     ET.WARNING: Alert(
-       "Vehicle in Right Lane",
-       "Waiting for Lane to be clear",
-       AlertStatus.userPrompt, AlertSize.mid,
-       Priority.LOW, VisualAlert.none, AudibleAlert.none, .0, .1, .1),
-   },
-
-   EventName.leftBlindspot: {
-     ET.WARNING: Alert(
-       "Vehicle in Left Lane",
-       "Waiting for Lane to be clear",
-       AlertStatus.userPrompt, AlertSize.mid,
-       Priority.LOW, VisualAlert.none, AudibleAlert.none, .0, .1, .1),
-   },
-
-   EventName.preventLaneChange: {
-     ET.WARNING: Alert(
-       "TAKE CONTROL",
-       "Lane Change Cancelled, Lane Unsafe",
-       AlertStatus.critical, AlertSize.full,
-       Priority.HIGH, VisualAlert.none, AudibleAlert.none, .0, .1, .1),
-   },
 
   # ********** events that affect controls state transitions **********
 
@@ -576,7 +536,7 @@ EVENTS = {
   },
 
   EventName.wrongGear: {
-    ET.USER_DISABLE: EngagementAlert(AudibleAlert.chimeDisengage),
+    ET.SOFT_DISABLE: SoftDisableAlert("Gear not D"),
     ET.NO_ENTRY: NoEntryAlert("Gear not D"),
   },
 
@@ -684,7 +644,7 @@ EVENTS = {
   },
 
   EventName.reverseGear: {
-    ET.USER_DISABLE: EngagementAlert(AudibleAlert.chimeDisengage),
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Reverse Gear"),
     ET.NO_ENTRY: NoEntryAlert("Reverse Gear"),
   },
 

@@ -1,5 +1,6 @@
 from cereal import car
 from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, CAR
+
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
@@ -79,6 +80,7 @@ class CarState(CarStateBase):
     self.cruise_main_button = cp.vl["CLU11"]["CF_Clu_CruiseSwMain"]
     self.cruise_buttons = cp.vl["CLU11"]["CF_Clu_CruiseSwState"]
 
+
     # TODO: Find brake pressure
     ret.brake = 0
     ret.brakePressed = cp.vl["TCS13"]['DriverBraking'] != 0
@@ -94,6 +96,7 @@ class CarState(CarStateBase):
                 cp.vl["E_EMS11"]['Accel_Pedal_Pos'] > 5
 
     ret.espDisabled = cp.vl["TCS15"]['ESC_Off_Step'] != 0
+
 
     # Gear Selection via Cluster - For those Kia/Hyundai which are not fully discovered, we can use the Cluster Indicator for Gear Selection, as this seems to be standard over all cars, but is not the preferred method.
     if self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
@@ -174,6 +177,7 @@ class CarState(CarStateBase):
       self.mdps11_strang = cp_mdps.vl["MDPS11"]["CR_Mdps_StrAng"]
       self.mdps11_stat = cp_mdps.vl["MDPS11"]["CF_Mdps_Stat"]
 
+
     return ret
 
   @staticmethod
@@ -195,11 +199,13 @@ class CarState(CarStateBase):
       ("CF_Gway_AstDrSw", "CGW1", 0),       # Passenger door is open
       ("CF_Gway_RLDrSw", "CGW2", 0),        # Rear reft door is open
       ("CF_Gway_RRDrSw", "CGW2", 0),        # Rear right door is open
+
       ("CF_Gway_TSigLHSw", "CGW1", 0),
       ("CF_Gway_TurnSigLh", "CGW1", 0),
       ("CF_Gway_TSigRHSw", "CGW1", 0),
       ("CF_Gway_TurnSigRh", "CGW1", 0),
       ("CF_Gway_ParkBrakeSw", "CGW1", 0),   # Parking Brake
+
 
       ("CYL_PRES", "ESP12", 0),
 
@@ -220,6 +226,7 @@ class CarState(CarStateBase):
       ("BrakeLight", "TCS13", 0),
       ("DriverBraking", "TCS13", 0),
       ("CF_VSM_Avail", "TCS13", 0),
+
 
       ("ESC_Off_Step", "TCS15", 0),
 
@@ -275,10 +282,12 @@ class CarState(CarStateBase):
       ("SCCMode2", "SCC14", 0),
       ("ComfortBandUpper", "SCC14", 0),
       ("ComfortBandLower", "SCC14", 0),
+
     ]
 
     checks = [
       # address, frequency
+
       ("TCS13", 50),
       ("TCS15", 10),
       ("CLU11", 50),
@@ -322,6 +331,7 @@ class CarState(CarStateBase):
         ("CRUISE_LAMP_M", "EMS16", 0),
         ("CF_Lvr_CruiseSet", "LVR12", 0),
       ]
+
     if CP.carFingerprint in FEATURES["use_cluster_gears"]:
       signals += [
         ("CF_Clu_InhibitD", "CLU15", 0),
@@ -481,6 +491,7 @@ class CarState(CarStateBase):
       ]
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 1)
 
+
   @staticmethod
   def get_cam_can_parser(CP):
 
@@ -494,12 +505,14 @@ class CarState(CarStateBase):
       ("CF_Lkas_HbaLamp", "LKAS11", 0),
       ("CF_Lkas_FcwBasReq", "LKAS11", 0),
       ("CF_Lkas_ToiFlt", "LKAS11", 0),
+
       ("CF_Lkas_HbaSysState", "LKAS11", 0),
       ("CF_Lkas_FcwOpt", "LKAS11", 0),
       ("CF_Lkas_HbaOpt", "LKAS11", 0),
       ("CF_Lkas_FcwSysState", "LKAS11", 0),
       ("CF_Lkas_FcwCollisionWarning", "LKAS11", 0),
       ("CF_Lkas_MsgCount", "LKAS11", 0),
+
       ("CF_Lkas_FusionState", "LKAS11", 0),
       ("CF_Lkas_FcwOpt_USM", "LKAS11", 0),
       ("CF_Lkas_LdwsOpt_USM", "LKAS11", 0)
@@ -560,4 +573,5 @@ class CarState(CarStateBase):
         ("SCC11", 50),
         ("SCC12", 50),
       ]
+
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)

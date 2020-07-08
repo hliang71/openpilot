@@ -191,6 +191,7 @@ class Panda(object):
                 self._handle = device.open()
                 if not sys.platform in ["win32", "cygwin", "msys"]:
                   print("=================set auto detach=================")
+
                   self._handle.setAutoDetachKernelDriver(True)
                 if claim:
                   self._handle.claimInterface(0)

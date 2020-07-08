@@ -8,6 +8,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                   lkas11, sys_warning, sys_state, enabled,
                   left_lane, right_lane,
                   left_lane_depart, right_lane_depart, bus):
+
   values = lkas11
   values["CF_Lkas_LdwsSysState"] = sys_state
   values["CF_Lkas_SysWarning"] = 3 if sys_warning else 0
@@ -20,6 +21,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
   values["CF_Lkas_Chksum"] = 0
 
   if car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.SONATA_H, CAR.SANTA_FE, CAR.KONA_EV, CAR.KIA_NIRO_EV]:
+
     values["CF_Lkas_Bca_R"] = int(left_lane) + (int(right_lane) << 1)
     values["CF_Lkas_LdwsOpt_USM"] = 2
 
@@ -61,10 +63,12 @@ def create_clu11(packer, frame, bus, clu11, button, speed):
   values["CF_Clu_AliveCnt1"] = frame // 2 % 0x10
   return packer.make_can_msg("CLU11", bus, values)
 
+
 def create_lfa_mfa(packer, frame, enabled):
   values = {
     "ACTIVE": enabled,
     "HDA_USM": 2,
+
   }
 
   # ACTIVE 1 = Green steering wheel icon
@@ -161,3 +165,4 @@ def create_ems11(packer, ems11, enabled):
   if enabled:
     values["VS"] = 0
   return packer.make_can_msg("values", 1, ems11)
+

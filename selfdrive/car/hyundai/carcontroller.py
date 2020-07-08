@@ -40,6 +40,7 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
   if not button_on:
     lane_visible = 0
   if left_lane and right_lane or sys_warning:  #HUD alert only display when LKAS status is active
+
     if enabled or sys_warning:
       sys_state = 3
     else:
@@ -56,6 +57,7 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
     left_lane_warning = 1 if fingerprint in [CAR.HYUNDAI_GENESIS, CAR.GENESIS_G90, CAR.GENESIS_G80] else 2
   if right_lane_depart:
     right_lane_warning = 1 if fingerprint in [CAR.HYUNDAI_GENESIS, CAR.GENESIS_G90, CAR.GENESIS_G80] else 2
+
 
   return sys_warning, sys_state, left_lane_warning, right_lane_warning
 
@@ -93,6 +95,7 @@ class CarController():
 
     apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady)
     apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
+
 
     # Steering Torque
     new_steer = actuators.steer * SteerLimitParams.STEER_MAX
@@ -202,6 +205,7 @@ class CarController():
       self.scc12_cnt += 1
 
     if CS.out.cruiseState.standstill:
+
       # run only first time when the car stopped
       if self.last_lead_distance == 0:
         # get the lead distance from the Radar
@@ -210,6 +214,7 @@ class CarController():
       # when lead car starts moving, create 6 RES msgs
       elif CS.lead_distance != self.last_lead_distance and (frame - self.last_resume_frame) > 5:
         can_sends.append(create_clu11(self.packer, frame, CS.scc_bus, CS.clu11, Buttons.RES_ACCEL, clu11_speed))
+
         self.resume_cnt += 1
         # interval after 6 msgs
         if self.resume_cnt > 5:
@@ -254,5 +259,6 @@ class CarController():
       # SPAS12 20Hz
       if (frame % 5) == 0:
         can_sends.append(create_spas12(CS.mdps_bus))
+
 
     return can_sends

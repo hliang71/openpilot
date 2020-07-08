@@ -27,6 +27,8 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "hyundai"
     ret.safetyModel = car.CarParams.SafetyModel.hyundai
 
+    ret.radarOffCan = True
+
     # Hyundai port is a community feature for now
     ret.communityFeature = True
 
@@ -342,6 +344,7 @@ class CarInterface(CarInterfaceBase):
         if EventName.pcmDisable in events.events:
           events.events.remove(EventName.pcmDisable)
 
+
     ret.events = events.to_msg()
 
     self.CS.out = ret.as_reader()
@@ -352,5 +355,6 @@ class CarInterface(CarInterfaceBase):
                                c.cruiseControl.cancel, c.hudControl.visualAlert, c.hudControl.leftLaneVisible,
                                c.hudControl.rightLaneVisible, c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart,
                                c.hudControl.setSpeed, c.hudControl.leadVisible)
+
     self.frame += 1
     return can_sends
