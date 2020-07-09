@@ -118,6 +118,21 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.385
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+    elif candidate == CAR.KIA_NIRO_EV:
+      ret.lateralTuning.init('indi')
+      ret.lateralTuning.indi.innerLoopGain = 5
+      ret.lateralTuning.indi.outerLoopGain = 4.85  # 4.8
+      ret.lateralTuning.indi.timeConstant = 2.088  # 1.16 x 1.8
+      ret.lateralTuning.indi.actuatorEffectiveness = 2.034  # 1.13 x 1.8
+      # ret.lateralTuning.pid.kf = 0.00005
+      ret.mass = 1737. + STD_CARGO_KG
+      ret.wheelbase = 2.7
+      ret.steerRatio = 24  # Spec 13.73
+      tire_stiffness_factor = 0.385
+      ret.steerActuatorDelay = 0.28  # 0.3
+      ret.steerLimitTimer = 0.1  # 0.8
+      # ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      # ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.KONA_EV:
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1685. + STD_CARGO_KG
