@@ -1,0 +1,45 @@
+name: Tests
+
+on: [push, pull_request]
+
+env:
+  RUN: docker run --shm-size 1G --rm cereal /bin/sh -c
+  BUILD: |
+      docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile) || true
+      docker pull docker.io/commaai/cereal:latest || true
+      docker build --cache-from docker.io/commaai/cereal:latest -t cereal -f Dockerfile .
+
+jobs:
+  test:
+    name: tests
+    runs-on: ubuntu-16.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build docker image
+      run: eval "$BUILD"
+    - name: Unit Tests
+      run: |
+        $RUN "scons --test --asan -j$(nproc) && messaging/test_runner"
+    - name: Test ZMQ
+      run: |
+        $RUN "ZMQ=1 python -m unittest discover ."
+    - name: Test MSGQ
+      run: |
+        $RUN "MSGQ=1 python -m unittest discover ."
+    - name: Push to dockerhub
+      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/cereal'
+      run: |
+        docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
+        docker tag cereal docker.io/commaai/cereal:latest
+        docker push docker.io/commaai/cereal:latest
+
+  static_analysis:
+    name: static analysis
+    runs-on: ubuntu-16.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build docker image
+      run: eval "$BUILD"
+    - name: Static analysis
+      run: |
+        $RUN "git init && git add -A && pre-commit run --all"
