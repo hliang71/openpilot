@@ -377,16 +377,16 @@ class Controls:
       self.saturated_count += 1
     else:
       self.saturated_count = 0
-
+    # comment out for CAR.KIA_NIRO_EV
     # Send a "steering required alert" if saturation count has reached the limit
-    if (lac_log.saturated and not CS.steeringPressed) or \
-       (self.saturated_count > STEER_ANGLE_SATURATION_TIMEOUT):
-      # Check if we deviated from the path
-      left_deviation = actuators.steer > 0 and path_plan.dPoly[3] > 0.1
-      right_deviation = actuators.steer < 0 and path_plan.dPoly[3] < -0.1
+    # if (lac_log.saturated and not CS.steeringPressed) or \
+    #   (self.saturated_count > STEER_ANGLE_SATURATION_TIMEOUT):
+    #  Check if we deviated from the path
+    #  left_deviation = actuators.steer > 0 and path_plan.dPoly[3] > 0.1
+    #  right_deviation = actuators.steer < 0 and path_plan.dPoly[3] < -0.1
 
-      if left_deviation or right_deviation:
-        self.events.add(EventName.steerSaturated)
+    #  if left_deviation or right_deviation:
+    #    self.events.add(EventName.steerSaturated)
 
     return actuators, v_acc_sol, a_acc_sol, lac_log
 
