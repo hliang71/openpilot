@@ -25,7 +25,7 @@ from selfdrive.locationd.calibration_helpers import Calibration
 
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
-STEER_ANGLE_SATURATION_TIMEOUT = 1.0 / DT_CTRL
+STEER_ANGLE_SATURATION_TIMEOUT = 10.0 / DT_CTRL
 STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
 ThermalStatus = log.ThermalData.ThermalStatus
@@ -386,7 +386,7 @@ class Controls:
       right_deviation = actuators.steer < 0 and path_plan.dPoly[3] < -0.1
 
       if left_deviation or right_deviation:
-        # self.events.add(EventName.steerSaturated)
+        self.events.add(EventName.steerSaturated)
 
     return actuators, v_acc_sol, a_acc_sol, lac_log
 
