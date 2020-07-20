@@ -129,7 +129,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.7
       ret.steerRatio = 13.75  # Spec 13.73
       tire_stiffness_factor = 0.385
-      ret.steerActuatorDelay = 0.28  # 0.3
+      ret.steerActuatorDelay = 0.26 #0.28  # 0.3
       ret.steerLimitTimer = 0.1  # 0.8
       # ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       # ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
@@ -160,7 +160,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
 
     # these cars require a special panda safety mode due to missing counters and checksums in the messages
-    if candidate in [CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_LTD, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_NIRO_EV]:  
+    if candidate in [CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_LTD, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_NIRO_EV]:
       ret.safetyModel = car.CarParams.SafetyModel.hyundaiLegacy
 
     ret.centerToFront = ret.wheelbase * 0.4
