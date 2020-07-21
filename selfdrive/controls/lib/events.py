@@ -1,5 +1,6 @@
-from cereal import log, car
+from functools import total_ordering
 
+from cereal import log, car
 from common.realtime import DT_CTRL
 from selfdrive.config import Conversions as CV
 from selfdrive.locationd.calibration_helpers import Filter
@@ -93,6 +94,7 @@ class Events:
       ret.append(event)
     return ret
 
+@total_ordering
 class Alert:
   def __init__(self,
                alert_text_1,
@@ -135,6 +137,9 @@ class Alert:
 
   def __gt__(self, alert2):
     return self.alert_priority > alert2.alert_priority
+
+  def __eq__(self, alert2):
+    return self.alert_priority == alert2.alert_priority
 
 class NoEntryAlert(Alert):
   def __init__(self, alert_text_2, audible_alert=AudibleAlert.chimeError,
@@ -203,8 +208,6 @@ def wrong_car_mode_alert(CP, sm, metric):
 
 EVENTS = {
   # ********** events with no alerts **********
-
-  EventName.modeldLagging: {},
 
   # ********** events only containing alerts displayed in all states **********
 
@@ -649,6 +652,11 @@ EVENTS = {
   EventName.radarFault: {
     ET.SOFT_DISABLE: SoftDisableAlert("Radar Error: Restart the Car"),
     ET.NO_ENTRY : NoEntryAlert("Radar Error: Restart the Car"),
+  },
+
+  EventName.modeldLagging: {
+    ET.SOFT_DISABLE: SoftDisableAlert("Driving model lagging"),
+    ET.NO_ENTRY : NoEntryAlert("Driving model lagging"),
   },
 
   EventName.lowMemory: {
