@@ -120,7 +120,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.KIA_NIRO_EV:
       ret.lateralTuning.init('indi')
-      ret.lateralTuning.indi.innerLoopGain = 2.83 #4.73 #5
+      ret.lateralTuning.indi.innerLoopGain = 2.85 #4.73 #5
       ret.lateralTuning.indi.outerLoopGain = 2.8 #4.6 #4.85  # 4.8
       ret.lateralTuning.indi.timeConstant = 2.088  # 1.16 x 1.8
       ret.lateralTuning.indi.actuatorEffectiveness = 2.034  # 1.13 x 1.8
