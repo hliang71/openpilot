@@ -136,7 +136,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.7
       ret.steerRatio = 13.75  # Spec 13.73
       tire_stiffness_factor = 0.385
-      ret.steerActuatorDelay = 0.253 #0.253 #0.255 #0.28  # 0.3
+      ret.steerActuatorDelay = 0.253  #0.253 #0.255 #0.28  # 0.3
       ret.steerLimitTimer = 0.4  # 0.8
       ret.steerMaxBP = [0.]
       ret.steerMaxV = [1.] #[0.85]
