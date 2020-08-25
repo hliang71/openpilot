@@ -34,18 +34,18 @@ function launch {
           echo "Valid overlay update found, installing"
           LAUNCHER_LOCATION="${BASH_SOURCE[0]}"
 
-          mv $BASEDIR /data/safe_staging/old_openpilot
-          mv "${STAGING_ROOT}/finalized" $BASEDIR
-          cd $BASEDIR
+          ## mv $BASEDIR /data/safe_staging/old_openpilot
+          ## mv "${STAGING_ROOT}/finalized" $BASEDIR
+          ## cd $BASEDIR
 
           # Partial mitigation for symlink-related filesystem corruption
           # Ensure all files match the repo versions after update
-          git reset --hard
-          git submodule foreach --recursive git reset --hard
+          ## git reset --hard
+          ## git submodule foreach --recursive git reset --hard
 
-          echo "Restarting launch script ${LAUNCHER_LOCATION}"
-          unset REQUIRED_NEOS_VERSION
-          exec "${LAUNCHER_LOCATION}"
+          ## echo "Restarting launch script ${LAUNCHER_LOCATION}"
+          ## unset REQUIRED_NEOS_VERSION
+          ##exec "${LAUNCHER_LOCATION}"
         else
           echo "openpilot backup found, not updating"
           # TODO: restore backup? This means the updater didn't start after swapping
