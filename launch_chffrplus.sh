@@ -109,8 +109,9 @@ function launch {
   # handle pythonpath
   ln -sfn $(pwd) /data/pythonpath
   export PYTHONPATH="$PWD"
-  rm /data/openpilot/panda/board/safety/safety_hyundai.h 2>/dev/null || true
-  cp /data/safety_hyundai.h /data/openpilot/panda/board/safety/ 2>/dev/null
+  ## rm /data/openpilot/panda/board/safety/safety_hyundai.h 2>/dev/null || true
+  ## cp /data/safety_hyundai.h /data/openpilot/panda/board/safety/ 2>/dev/null
+  /data/override_safety.sh " 990;" " 255;" " 5;"
   # start manager
   cd selfdrive
   ./manager.py
