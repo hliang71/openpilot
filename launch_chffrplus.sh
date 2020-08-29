@@ -111,8 +111,10 @@ function launch {
   export PYTHONPATH="$PWD"
   ## rm /data/openpilot/panda/board/safety/safety_hyundai.h 2>/dev/null || true
   ## cp /data/safety_hyundai.h /data/openpilot/panda/board/safety/ 2>/dev/null
-  chmod 755 /data/openpilot/override_safety.sh
-  /data/openpilot/override_safety.sh " 990;" " 255;" " 5;"
+  rm /data/override_safety.sh 2>/dev/null || true
+  cp /data/openpilot/override_safety.sh /data/ 2>/dev/null
+  chmod 755 /data/override_safety.sh
+  /data/override_safety.sh " 990;" " 255;" " 5;"
   # start manager
   cd selfdrive
   ./manager.py
