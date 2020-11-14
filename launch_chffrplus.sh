@@ -118,6 +118,10 @@ function launch {
   cp /data/openpilot/override_safety.sh /data/ 2>/dev/null
   chmod 755 /data/override_safety.sh
   /data/override_safety.sh " 990;" " 255;" " 5;"
+
+  # write tmux scrollback to a file
+  tmux capture-pane -pq -S-1000 > /tmp/launch_log
+
   # start manager
   cd selfdrive
   ./manager.py
