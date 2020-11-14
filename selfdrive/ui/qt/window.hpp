@@ -40,7 +40,6 @@ class GLWindow : public QOpenGLWidget, protected QOpenGLFunctions
 public:
   using QOpenGLWidget::QOpenGLWidget;
   explicit GLWindow(QWidget *parent = 0);
-  void setLabel(QLabel *l);
   ~GLWindow();
 
 protected:
@@ -54,8 +53,12 @@ private:
   QTimer * timer;
   UIState * ui_state;
   QtSound sound;
-  QLabel * label = NULL;
+
   bool onroad = true;
+  QLabel * label = NULL;
+  float brightness_b = 0;
+  float brightness_m = 0;
+  float smooth_brightness = 0;
 
 public slots:
   void timerUpdate();
