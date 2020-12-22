@@ -18,20 +18,19 @@
 #include "common/params.h"
 #include "common/utilpp.h"
 
-const int SIDEBAR_WIDTH = 400;
 
 ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
   QHBoxLayout *hlayout = new QHBoxLayout;
 
   // Parameter image
   hlayout->addSpacing(25);
-  if (icon_path.length()){
+  if (icon_path.length()) {
     QPixmap pix(icon_path);
     QLabel *icon = new QLabel();
     icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
     icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     hlayout->addWidget(icon);
-  } else{
+  } else {
     hlayout->addSpacing(100);
   }
   hlayout->addSpacing(25);
@@ -51,25 +50,14 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   hlayout->addSpacing(20);
 
   setLayout(hlayout);
-  if(Params().read_db_bool(param.toStdString().c_str())){
+  if (Params().read_db_bool(param.toStdString().c_str())) {
     toggle_switch->togglePosition();
   }
 
   setStyleSheet(R"(
-    QCheckBox {
-      font-size: 70px;
+    QLabel {
+      font-size: 50px;
     }
-    QCheckBox::indicator {
-      width: 100px;
-      height: 100px;
-    }
-    QCheckBox::indicator:unchecked {
-      image: url(../assets/offroad/circled-checkmark-empty.png);
-    }
-    QCheckBox::indicator:checked {
-      image: url(../assets/offroad/circled-checkmark.png);
-    }
-    QLabel { font-size: 50px }
     * {
       background-color: #114265;
     }
@@ -78,7 +66,7 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   QObject::connect(toggle_switch, SIGNAL(stateChanged(int)), this, SLOT(checkboxClicked(int)));
 }
 
-void ParamsToggle::checkboxClicked(int state){
+void ParamsToggle::checkboxClicked(int state) {
   char value = state ? '1': '0';
   Params().write_db_value(param.toStdString().c_str(), &value, 1);
 }
@@ -137,33 +125,40 @@ QWidget * device_panel() {
   Params params = Params();
   std::vector<std::pair<std::string, std::string>> labels = {
     {"Dongle ID", params.get("DongleId", false)},
-    //{"Serial Number", "abcdefghijk"},
   };
 
-  for (auto l : labels) {
+  // get serial number
+  //std::string cmdline = util::read_file("/proc/cmdline");
+  //auto delim = cmdline.find("serialno=");
+  //if (delim != std::string::npos) {
+  //  labels.push_back({"Serial", cmdline.substr(delim, cmdline.find(" ", delim))});
+  //}
+
+  for (auto &l : labels) {
     QString text = QString::fromStdString(l.first + ": " + l.second);
     device_layout->addWidget(new QLabel(text));
   }
 
+  // TODO: show current calibration values
   QPushButton *clear_cal_btn = new QPushButton("Reset Calibration");
   device_layout->addWidget(clear_cal_btn);
   QObject::connect(clear_cal_btn, &QPushButton::released, [=]() {
     Params().delete_db_value("CalibrationParams");
   });
 
-  std::map<std::string, const char *> power_btns = {
-    {"Power Off", "sudo poweroff"},
-    {"Reboot", "sudo reboot"},
-  };
-
-  for (auto b : power_btns) {
-    QPushButton *btn = new QPushButton(QString::fromStdString(b.first));
-    device_layout->addWidget(btn);
+  QPushButton *poweroff_btn = new QPushButton("Power Off");
+  device_layout->addWidget(poweroff_btn);
+  QPushButton *reboot_btn = new QPushButton("Reboot");
+  device_layout->addWidget(reboot_btn);
 #ifdef __aarch64__
-    QObject::connect(btn, &QPushButton::released,
-                     [=]() {std::system(b.second);});
+  QObject::connect(poweroff_btn, &QPushButton::released, [=]() { std::system("sudo poweroff"); });
+  QObject::connect(reboot_btn, &QPushButton::released, [=]() { std::system("sudo reboot"); });
 #endif
-  }
+
+  // TODO: add confirmation dialog
+  QPushButton *uninstall_btn = new QPushButton("Uninstall openpilot");
+  device_layout->addWidget(uninstall_btn);
+  QObject::connect(uninstall_btn, &QPushButton::released, [=]() { Params().write_db_value("DoUninstall", "1"); });
 
   QWidget *widget = new QWidget;
   widget->setLayout(device_layout);
@@ -182,14 +177,17 @@ QWidget * developer_panel() {
 
   Params params = Params();
   std::string brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
-  std::string os_version = util::read_file("/VERSION");
   std::vector<std::pair<std::string, std::string>> labels = {
     {"Version", brand + " v" + params.get("Version", false)},
-    {"OS Version", os_version},
     {"Git Branch", params.get("GitBranch", false)},
     {"Git Commit", params.get("GitCommit", false).substr(0, 10)},
     {"Panda Firmware", params.get("PandaFirmwareHex", false)},
   };
+
+  std::string os_version = util::read_file("/VERSION");
+  if (os_version.size()) {
+    labels.push_back({"OS Version", "AGNOS " + os_version});
+  }
 
   for (auto l : labels) {
     QString text = QString::fromStdString(l.first + ": " + l.second);
@@ -198,12 +196,16 @@ QWidget * developer_panel() {
 
   QWidget *widget = new QWidget;
   widget->setLayout(main_layout);
+  widget->setStyleSheet(R"(
+    QLabel {
+      font-size: 50px;
+    }
+  )");
   return widget;
 }
 
 QWidget * network_panel(QWidget * parent) {
   WifiUI *w = new WifiUI();
-
   QObject::connect(w, SIGNAL(openKeyboard()), parent, SLOT(closeSidebar()));
   QObject::connect(w, SIGNAL(closeKeyboard()), parent, SLOT(openSidebar()));
   return w;
@@ -211,12 +213,12 @@ QWidget * network_panel(QWidget * parent) {
 
 
 void SettingsWindow::setActivePanel() {
-  QPushButton *btn = qobject_cast<QPushButton*>(sender());
+  auto *btn = qobject_cast<QPushButton *>(nav_btns->checkedButton());
   panel_layout->setCurrentWidget(panels[btn->text()]);
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
-  // sidebar
+  // two main layouts
   QVBoxLayout *sidebar_layout = new QVBoxLayout();
   panel_layout = new QStackedLayout();
 
@@ -226,20 +228,11 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     QPushButton {
       padding: 50px;
       font-weight: bold;
-      font-size: 100px;
+      font-size: 110px;
     }
   )");
   sidebar_layout->addWidget(close_button);
   QObject::connect(close_button, SIGNAL(released()), this, SIGNAL(closeSettings()));
-
-  // offroad alerts
-  alerts_widget = new OffroadAlert();
-  QObject::connect(alerts_widget, SIGNAL(closeAlerts()), this, SLOT(closeAlerts()));
-  panel_layout->addWidget(alerts_widget);
-
-  sidebar_alert_widget = new QPushButton("");//Should get text when it is visible
-  QObject::connect(sidebar_alert_widget, SIGNAL(released()), this, SLOT(openAlerts()));
-  sidebar_layout->addWidget(sidebar_alert_widget);
 
   // setup panels
   panels = {
@@ -249,42 +242,44 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     {"toggles", toggles_panel()},
   };
 
+  nav_btns = new QButtonGroup();
   for (auto &panel : panels) {
     QPushButton *btn = new QPushButton(panel.first);
+    btn->setCheckable(true);
     btn->setStyleSheet(R"(
       QPushButton {
         padding-top: 35px;
         padding-bottom: 35px;
-        font-size: 60px;
-        text-align: right;
         border: none;
         background: none;
+        font-size: 55px;
+      }
+      QPushButton:checked {
+        font-size: 50px;
         font-weight: bold;
       }
     )");
 
-    sidebar_layout->addWidget(btn);
+    nav_btns->addButton(btn);
+    sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
     panel_layout->addWidget(panel.second);
     QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
   }
-  
-  // We either show the alerts, or the developer panel
-  if (alerts_widget->show_alert){
-    panel_layout->setCurrentWidget(alerts_widget);
-  }
+  qobject_cast<QPushButton *>(nav_btns->buttons()[0])->setChecked(true);
 
   QHBoxLayout *settings_layout = new QHBoxLayout();
+  settings_layout->setMargin(0);
   settings_layout->addSpacing(45);
+
   sidebar_widget = new QWidget;
   sidebar_widget->setLayout(sidebar_layout);
-  sidebar_widget->setFixedWidth(SIDEBAR_WIDTH);
   settings_layout->addWidget(sidebar_widget);
 
   settings_layout->addSpacing(45);
   settings_layout->addLayout(panel_layout);
   settings_layout->addSpacing(45);
+
   setLayout(settings_layout);
-  
   setStyleSheet(R"(
     * {
       color: white;
@@ -293,54 +288,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   )");
 }
 
-// Refreshes the offroad alerts from the params folder and sets up the sidebar alerts widget.
-// The function gets called every time a user opens the settings page
-void SettingsWindow::refreshParams(){
-  alerts_widget->refresh();
-  if (!alerts_widget->show_alert){
-    sidebar_alert_widget->setFixedHeight(0);
-    panel_layout->setCurrentIndex(1);
-    return;
-  }
+void SettingsWindow::closeSidebar() {
+  sidebar_widget->setVisible(false);
+}
 
-  // Panel 0 contains the alerts or release notes. 
-  panel_layout->setCurrentIndex(0);
-  sidebar_alert_widget->setFixedHeight(100);
-  sidebar_alert_widget->setStyleSheet(R"(
-    background-color: #114267;
-  )"); // light blue
-  
-  // Check for alerts
-  int alerts = alerts_widget->alerts.size();
-  if (!alerts){
-    //There is a new release
-    sidebar_alert_widget->setText("UPDATE");
-    return;
-  }
-  //Check if there is an important alert
-  bool existsImportantAlert = false;
-  for (auto alert : alerts_widget->alerts){
-    if (alert.severity){
-      existsImportantAlert = true;
-    }
-  }
-
-  sidebar_alert_widget->setText(QString::number(alerts) + " ALERT" + (alerts == 1 ? "" : "S"));
-  if (existsImportantAlert){
-    sidebar_alert_widget->setStyleSheet(R"(
-      background-color: #661111;
-    )"); //dark red
-  }
-}
-void SettingsWindow::closeAlerts(){
-  panel_layout->setCurrentIndex(1);
-}
-void SettingsWindow::openAlerts(){
-  panel_layout->setCurrentIndex(0);
-}
-void SettingsWindow::closeSidebar(){
-  sidebar_widget->setFixedWidth(0);
-}
-void SettingsWindow::openSidebar(){
-  sidebar_widget->setFixedWidth(SIDEBAR_WIDTH);
+void SettingsWindow::openSidebar() {
+  sidebar_widget->setVisible(true);
 }
