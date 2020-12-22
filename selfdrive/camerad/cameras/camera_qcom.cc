@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <assert.h>
@@ -333,10 +332,10 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   s->rear.device = s->device;
   s->front.device = s->device;
 
-  s->sm = new SubMaster({"driverState", "sensorEvents"});
+  s->sm_front = new SubMaster({"driverState"});
+  s->sm_rear = new SubMaster({"sensorEvents"});
   s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
 
-  int err;
   const int rgb_width = s->rear.buf.rgb_width;
   const int rgb_height = s->rear.buf.rgb_height;
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
@@ -345,15 +344,14 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
     s->stats_bufs[i] = visionbuf_allocate(0xb80);
   }
   s->prg_rgb_laplacian = build_conv_program(device_id, ctx, rgb_width/NUM_SEGMENTS_X, rgb_height/NUM_SEGMENTS_Y, 3);
-  s->krnl_rgb_laplacian = clCreateKernel(s->prg_rgb_laplacian, "rgb2gray_conv2d", &err);
-  assert(err == 0);
+  s->krnl_rgb_laplacian = CL_CHECK_ERR(clCreateKernel(s->prg_rgb_laplacian, "rgb2gray_conv2d", &err));
   // TODO: Removed CL_MEM_SVM_FINE_GRAIN_BUFFER, confirm it doesn't matter
-  s->rgb_conv_roi_cl = clCreateBuffer(ctx, CL_MEM_READ_WRITE,
-      rgb_width/NUM_SEGMENTS_X * rgb_height/NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), NULL, NULL);
-  s->rgb_conv_result_cl = clCreateBuffer(ctx, CL_MEM_READ_WRITE,
-      rgb_width/NUM_SEGMENTS_X * rgb_height/NUM_SEGMENTS_Y * sizeof(int16_t), NULL, NULL);
-  s->rgb_conv_filter_cl = clCreateBuffer(ctx, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-      9 * sizeof(int16_t), (void*)&lapl_conv_krnl, NULL);
+  s->rgb_conv_roi_cl = CL_CHECK_ERR(clCreateBuffer(ctx, CL_MEM_READ_WRITE,
+      rgb_width/NUM_SEGMENTS_X * rgb_height/NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), NULL, &err));
+  s->rgb_conv_result_cl = CL_CHECK_ERR(clCreateBuffer(ctx, CL_MEM_READ_WRITE,
+      rgb_width/NUM_SEGMENTS_X * rgb_height/NUM_SEGMENTS_Y * sizeof(int16_t), NULL, &err));
+  s->rgb_conv_filter_cl = CL_CHECK_ERR(clCreateBuffer(ctx, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+      9 * sizeof(int16_t), (void*)&lapl_conv_krnl, &err));
   s->conv_cl_localMemSize = ( CONV_LOCAL_WORKSIZE + 2 * (3 / 2) ) * ( CONV_LOCAL_WORKSIZE + 2 * (3 / 2) );
   s->conv_cl_localMemSize *= 3 * sizeof(uint8_t);
   s->conv_cl_globalWorkSize[0] = rgb_width/NUM_SEGMENTS_X;
@@ -1399,7 +1397,7 @@ static void camera_open(CameraState *s, bool rear) {
       err = ioctl(s->ois_fd, VIDIOC_MSM_OIS_CFG, &ois_cfg_data);
       LOG("ois init settings: %d", err);
     } else {
-      // leeco actuator
+      // leeco actuator (DW9800W H-Bridge Driver IC)
       // from sniff
       s->infinity_dac = 364;
 
@@ -1407,6 +1405,7 @@ static void camera_open(CameraState *s, bool rear) {
         {
           .reg_write_type = MSM_ACTUATOR_WRITE_DAC,
           .hw_mask = 0,
+          // MSB here at address 3
           .reg_addr = 3,
           .hw_shift = 0,
           .data_type = 9,
@@ -1417,11 +1416,14 @@ static void camera_open(CameraState *s, bool rear) {
       };
 
       struct reg_settings_t actuator_init_settings[] = {
-        { .reg_addr=2, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=1, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 0 },
-        { .reg_addr=2, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=0, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 2 },
-        { .reg_addr=2, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=2, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 2 },
-        { .reg_addr=6, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=64, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 0 },
+        { .reg_addr=2, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=1, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 0 },   // PD = power down
+        { .reg_addr=2, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=0, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 2 },   // 0 = power up
+        { .reg_addr=2, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=2, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 2 },   // RING = SAC mode
+        { .reg_addr=6, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=64, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 0 },  // 0x40 = SAC3 mode
         { .reg_addr=7, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=113, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 0 },
+        // 0x71 = DIV1 | DIV0 | SACT0 -- Tvib x 1/4 (quarter)
+        // SAC Tvib = 6.3 ms + 0.1 ms = 6.4 ms / 4 = 1.6 ms
+        // LSC 1-step = 252 + 1*4 = 256 ms / 4 = 64 ms
       };
 
       struct region_params_t region_params[] = {
@@ -2042,7 +2044,7 @@ static void* ops_thread(void* arg) {
 }
 
 void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
-  common_camera_process_front(s->sm, s->pm, c, cnt);
+  common_camera_process_front(s->sm_front, s->pm, c, cnt);
 }
 
 // called by processing_thread
@@ -2051,11 +2053,11 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   // cache rgb roi and write to cl
 
   // gz compensation
-  s->sm->update(0);
-  if (s->sm->updated("sensorEvents")) {
+  s->sm_rear->update(0);
+  if (s->sm_rear->updated("sensorEvents")) {
     float vals[3] = {0.0};
     bool got_accel = false;
-    auto sensor_events = (*(s->sm))["sensorEvents"].getSensorEvents();
+    auto sensor_events = (*(s->sm_rear))["sensorEvents"].getSensorEvents();
     for (auto sensor_event : sensor_events) {
       if (sensor_event.which() == cereal::SensorEventData::ACCELERATION) {
         auto v = sensor_event.getAcceleration().getV();
@@ -2089,20 +2091,20 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
             b->rgb_width/NUM_SEGMENTS_X * 3);
   }
 
-  assert(clEnqueueWriteBuffer(b->q, s->rgb_conv_roi_cl, true, 0,
-                              b->rgb_width / NUM_SEGMENTS_X * b->rgb_height / NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), s->rgb_roi_buf.get(), 0, 0, 0) == 0);
-  assert(clSetKernelArg(s->krnl_rgb_laplacian, 0, sizeof(cl_mem), (void *)&s->rgb_conv_roi_cl) == 0);
-  assert(clSetKernelArg(s->krnl_rgb_laplacian, 1, sizeof(cl_mem), (void *)&s->rgb_conv_result_cl) == 0);
-  assert(clSetKernelArg(s->krnl_rgb_laplacian, 2, sizeof(cl_mem), (void *)&s->rgb_conv_filter_cl) == 0);
-  assert(clSetKernelArg(s->krnl_rgb_laplacian, 3, s->conv_cl_localMemSize, 0) == 0);
+  CL_CHECK(clEnqueueWriteBuffer(b->q, s->rgb_conv_roi_cl, true, 0,
+                              b->rgb_width / NUM_SEGMENTS_X * b->rgb_height / NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), s->rgb_roi_buf.get(), 0, 0, 0));
+  CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 0, sizeof(cl_mem), (void *)&s->rgb_conv_roi_cl));
+  CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 1, sizeof(cl_mem), (void *)&s->rgb_conv_result_cl));
+  CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 2, sizeof(cl_mem), (void *)&s->rgb_conv_filter_cl));
+  CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 3, s->conv_cl_localMemSize, 0));
   cl_event conv_event;
-  assert(clEnqueueNDRangeKernel(b->q, s->krnl_rgb_laplacian, 2, NULL,
-                                s->conv_cl_globalWorkSize, s->conv_cl_localWorkSize, 0, 0, &conv_event) == 0);
+  CL_CHECK(clEnqueueNDRangeKernel(b->q, s->krnl_rgb_laplacian, 2, NULL,
+                                s->conv_cl_globalWorkSize, s->conv_cl_localWorkSize, 0, 0, &conv_event));
   clWaitForEvents(1, &conv_event);
-  clReleaseEvent(conv_event);
+  CL_CHECK(clReleaseEvent(conv_event));
 
-  assert(clEnqueueReadBuffer(b->q, s->rgb_conv_result_cl, true, 0,
-                             b->rgb_width / NUM_SEGMENTS_X * b->rgb_height / NUM_SEGMENTS_Y * sizeof(int16_t), s->conv_result.get(), 0, 0, 0) == 0);
+  CL_CHECK(clEnqueueReadBuffer(b->q, s->rgb_conv_result_cl, true, 0,
+                             b->rgb_width / NUM_SEGMENTS_X * b->rgb_height / NUM_SEGMENTS_Y * sizeof(int16_t), s->conv_result.get(), 0, 0, 0));
 
   get_lapmap_one(s->conv_result.get(), &s->lapres[roi_id], b->rgb_width / NUM_SEGMENTS_X, b->rgb_height / NUM_SEGMENTS_Y);
 
@@ -2136,11 +2138,14 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
     MessageBuilder msg;
     auto framed = msg.initEvent().initFrame();
     fill_frame_data(framed, b->cur_frame_data, cnt);
-    framed.setFocusVal(kj::ArrayPtr<const int16_t>(&s->rear.focus[0], NUM_FOCUS));
-    framed.setFocusConf(kj::ArrayPtr<const uint8_t>(&s->rear.confidence[0], NUM_FOCUS));
-    framed.setSharpnessScore(kj::ArrayPtr<const uint16_t>(&s->lapres[0], ARRAYSIZE(s->lapres)));
+    if (env_send_rear) {
+      fill_frame_image(framed, (uint8_t*)b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height, b->rgb_stride);
+    }
+    framed.setFocusVal(s->rear.focus);
+    framed.setFocusConf(s->rear.confidence);
+    framed.setSharpnessScore(s->lapres);
     framed.setRecoverState(self_recover);
-    framed.setTransform(kj::ArrayPtr<const float>(&b->yuv_transform.v[0], 9));
+    framed.setTransform(b->yuv_transform.v);
     s->pm->send("frame", msg);
   }
 
@@ -2154,7 +2159,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   const int exposure_height = 314;
   const int skip = 1;
   if (cnt % 3 == 0) {
-    set_exposure_target(c, (const uint8_t *)b->yuv_bufs[b->cur_yuv_idx].y, 0, exposure_x, exposure_x + exposure_width, skip, exposure_y, exposure_y + exposure_height, skip);
+    set_exposure_target(c, (const uint8_t *)b->yuv_bufs[b->cur_yuv_idx].y, exposure_x, exposure_x + exposure_width, skip, exposure_y, exposure_y + exposure_height, skip);
   }
 }
 
@@ -2281,12 +2286,13 @@ void cameras_close(MultiCameraState *s) {
     visionbuf_free(&s->focus_bufs[i]);
     visionbuf_free(&s->stats_bufs[i]);
   }
-  clReleaseMemObject(s->rgb_conv_roi_cl);
-  clReleaseMemObject(s->rgb_conv_result_cl);
-  clReleaseMemObject(s->rgb_conv_filter_cl);
+  CL_CHECK(clReleaseMemObject(s->rgb_conv_roi_cl));
+  CL_CHECK(clReleaseMemObject(s->rgb_conv_result_cl));
+  CL_CHECK(clReleaseMemObject(s->rgb_conv_filter_cl));
 
-  clReleaseProgram(s->prg_rgb_laplacian);
-  clReleaseKernel(s->krnl_rgb_laplacian);
-  delete s->sm;
+  CL_CHECK(clReleaseKernel(s->krnl_rgb_laplacian));
+  CL_CHECK(clReleaseProgram(s->prg_rgb_laplacian));
+  delete s->sm_front;
+  delete s->sm_rear;
   delete s->pm;
 }
