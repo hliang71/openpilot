@@ -326,16 +326,16 @@ def thermald_thread():
 
       set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
       set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", False)
-      set_offroad_alert_if_changed("Offroad_UpdateFailed", True, extra_text=extra_text)
+      set_offroad_alert_if_changed("Offroad_UpdateFailed", False, extra_text=extra_text)
     elif dt.days > DAYS_NO_CONNECTIVITY_MAX and update_failed_count > 1:
       set_offroad_alert_if_changed("Offroad_UpdateFailed", False)
       set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", False)
-      set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", True)
+      set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
     elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
       remaining_time = str(max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 0))
       set_offroad_alert_if_changed("Offroad_UpdateFailed", False)
       set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
-      set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining_time} days.")
+      set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", False, extra_text=f"{remaining_time} days.")
     else:
       set_offroad_alert_if_changed("Offroad_UpdateFailed", False)
       set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
