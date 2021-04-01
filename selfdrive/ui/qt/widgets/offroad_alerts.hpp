@@ -1,25 +1,30 @@
 #pragma once
+#include <map>
 
-#include <QWidget>
-#include <QVBoxLayout>
+#include <QFrame>
+#include <QPushButton>
+#include <QLabel>
 
-struct Alert {
-  QString text;
-  int severity;
-};
+#include "common/params.h"
+#include "widgets/scrollview.hpp"
 
-class OffroadAlert : public QWidget {
+class OffroadAlert : public QFrame {
   Q_OBJECT
 
 public:
   explicit OffroadAlert(QWidget *parent = 0);
-  QVector<Alert> alerts;
+  int alertCount = 0;
   bool updateAvailable;
 
 private:
-  QVBoxLayout *vlayout;
+  Params params;
+  QLabel releaseNotes;
+  std::map<std::string, QLabel*> alerts;
+  QPushButton rebootBtn;
+  void updateAlerts();
 
-  void parse_alerts();
+  ScrollView *releaseNotesScroll;
+  ScrollView *alertsScroll;
 
 signals:
   void closeAlerts();

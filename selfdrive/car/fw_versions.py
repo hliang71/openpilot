@@ -56,50 +56,78 @@ HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x4
 TOYOTA_VERSION_REQUEST = b'\x1a\x88\x01'
 TOYOTA_VERSION_RESPONSE = b'\x5a\x88\x01'
 
+VOLKSWAGEN_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_SPARE_PART_NUMBER) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_VERSION_NUMBER) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
+VOLKSWAGEN_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
+
 OBD_VERSION_REQUEST = b'\x09\x04'
 OBD_VERSION_RESPONSE = b'\x49\x04'
 
+DEFAULT_RX_OFFSET = 0x8
+VOLKSWAGEN_RX_OFFSET = 0x6a
 
-# supports subaddressing, request, response
+# brand, request, response, response offset
 REQUESTS = [
-  # Hundai
+  # Hyundai
   (
     "hyundai",
     [HYUNDAI_VERSION_REQUEST_SHORT],
     [HYUNDAI_VERSION_RESPONSE],
+    DEFAULT_RX_OFFSET,
   ),
   (
     "hyundai",
     [HYUNDAI_VERSION_REQUEST_LONG],
     [HYUNDAI_VERSION_RESPONSE],
+    DEFAULT_RX_OFFSET,
   ),
   (
     "hyundai",
     [HYUNDAI_VERSION_REQUEST_MULTI],
     [HYUNDAI_VERSION_RESPONSE],
+    DEFAULT_RX_OFFSET,
   ),
   # Honda
   (
     "honda",
     [UDS_VERSION_REQUEST],
     [UDS_VERSION_RESPONSE],
+    DEFAULT_RX_OFFSET,
   ),
   # Toyota
   (
     "toyota",
     [SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST],
     [SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE],
+    DEFAULT_RX_OFFSET,
   ),
   (
     "toyota",
     [SHORT_TESTER_PRESENT_REQUEST, OBD_VERSION_REQUEST],
     [SHORT_TESTER_PRESENT_RESPONSE, OBD_VERSION_RESPONSE],
+    DEFAULT_RX_OFFSET,
   ),
   (
     "toyota",
     [TESTER_PRESENT_REQUEST, DEFAULT_DIAGNOSTIC_REQUEST, EXTENDED_DIAGNOSTIC_REQUEST, UDS_VERSION_REQUEST],
     [TESTER_PRESENT_RESPONSE, DEFAULT_DIAGNOSTIC_RESPONSE, EXTENDED_DIAGNOSTIC_RESPONSE, UDS_VERSION_RESPONSE],
-  )
+    DEFAULT_RX_OFFSET,
+  ),
+  # Volkswagen
+  (
+    "volkswagen",
+    [VOLKSWAGEN_VERSION_REQUEST_MULTI],
+    [VOLKSWAGEN_VERSION_RESPONSE],
+    VOLKSWAGEN_RX_OFFSET,
+  ),
+  (
+    "volkswagen",
+    [VOLKSWAGEN_VERSION_REQUEST_MULTI],
+    [VOLKSWAGEN_VERSION_RESPONSE],
+    DEFAULT_RX_OFFSET,
+  ),
 ]
 
 
@@ -128,7 +156,7 @@ def match_fw_to_car(fw_versions):
         continue
 
       # TODO: on some toyota, the engine can show on two different addresses
-      if ecu_type == Ecu.engine and candidate in [TOYOTA.COROLLA_TSS2, TOYOTA.CHR, TOYOTA.LEXUS_IS] and found_version is None:
+      if ecu_type == Ecu.engine and candidate in [TOYOTA.COROLLA_TSS2, TOYOTA.CHR, TOYOTA.LEXUS_IS, TOYOTA.AVALON] and found_version is None:
         continue
 
       # ignore non essential ecus
@@ -173,12 +201,12 @@ def get_fw_versions(logcan, sendcan, bus, extra=None, timeout=0.1, debug=False, 
   fw_versions = {}
   for i, addr in enumerate(tqdm(addrs, disable=not progress)):
     for addr_chunk in chunks(addr):
-      for brand, request, response in REQUESTS:
+      for brand, request, response, response_offset in REQUESTS:
         try:
           addrs = [(a, s) for (b, a, s) in addr_chunk if b in (brand, 'any')]
 
           if addrs:
-            query = IsoTpParallelQuery(sendcan, logcan, bus, addrs, request, response, debug=debug)
+            query = IsoTpParallelQuery(sendcan, logcan, bus, addrs, request, response, response_offset, debug=debug)
             t = 2 * timeout if i == 0 else timeout
             fw_versions.update(query.get_data(t))
         except Exception:

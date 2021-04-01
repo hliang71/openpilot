@@ -7,6 +7,7 @@ import jwt
 from datetime import datetime, timedelta
 from common.api import api_get
 from common.params import Params
+from common.spinner import Spinner
 from common.file_helpers import mkdirs_exists_ok
 from common.basedir import PERSIST
 from selfdrive.hardware import HARDWARE
@@ -15,7 +16,7 @@ from selfdrive.version import version, terms_version, training_version, get_git_
                               get_git_branch, get_git_remote
 
 
-def register(spinner=None):
+def register(show_spinner=False):
   params = Params()
   params.put("Version", version)
   params.put("TermsVersion", terms_version)
@@ -26,7 +27,10 @@ def register(spinner=None):
   params.put("GitRemote", get_git_remote(default=""))
   params.put("SubscriberInfo", HARDWARE.get_subscriber_info())
 
-  needs_registration = False
+  IMEI = params.get("IMEI", encoding='utf8')
+  HardwareSerial = params.get("HardwareSerial", encoding='utf8')
+
+  needs_registration = (None in [IMEI, HardwareSerial])
 
   # create a key for auth
   # your private key is kept on your device persist partition and never sent to our servers
@@ -48,7 +52,8 @@ def register(spinner=None):
   needs_registration = needs_registration or dongle_id is None
 
   if needs_registration:
-    if spinner is not None:
+    if show_spinner:
+      spinner = Spinner()
       spinner.update("registering device")
 
     # Create registration token, in the future, this key will make JWTs directly
@@ -65,11 +70,15 @@ def register(spinner=None):
         cloudlog.exception("Error getting imei, trying again...")
         time.sleep(1)
 
+    serial = HARDWARE.get_serial()
+    params.put("IMEI", imei1)
+    params.put("HardwareSerial", serial)
+
     while True:
       try:
         cloudlog.info("getting pilotauth")
         resp = api_get("v2/pilotauth/", method='POST', timeout=15,
-                       imei=imei1, imei2=imei2, serial=HARDWARE.get_serial(), public_key=public_key, register_token=register_token)
+                       imei=imei1, imei2=imei2, serial=serial, public_key=public_key, register_token=register_token)
         dongleauth = json.loads(resp.text)
         dongle_id = dongleauth["dongle_id"]
         params.put("DongleId", dongle_id)
@@ -78,7 +87,11 @@ def register(spinner=None):
         cloudlog.exception("failed to authenticate")
         time.sleep(1)
 
+    if show_spinner:
+      spinner.close()
+
   return dongle_id
+
 
 if __name__ == "__main__":
   print(register())

@@ -3,25 +3,24 @@ import os
 import sys
 import time
 from typing import Any
+
 from tqdm import tqdm
 
-os.environ['QCOM_REPLAY'] = '1'
-
+import cereal.messaging as messaging
+from cereal import log
 from common.spinner import Spinner
 from common.timeout import Timeout
-import selfdrive.manager as manager
-
-from cereal import log
-import cereal.messaging as messaging
-from tools.lib.framereader import FrameReader
-from tools.lib.logreader import LogReader
+from common.transformations.camera import get_view_frame_from_road_frame
+from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.openpilotci import BASE_URL, get_url
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
 from selfdrive.test.process_replay.test_processes import format_diff
 from selfdrive.version import get_git_commit
-from common.transformations.camera import get_view_frame_from_road_frame
+from tools.lib.framereader import FrameReader
+from tools.lib.logreader import LogReader
 
 TEST_ROUTE = "99c94dc769b5d96e|2019-08-03--14-19-59"
+
 
 def replace_calib(msg, calib):
   msg = msg.as_builder()
@@ -29,27 +28,28 @@ def replace_calib(msg, calib):
     msg.liveCalibration.extrinsicMatrix = get_view_frame_from_road_frame(*calib, 1.22).flatten().tolist()
   return msg
 
+
 def camera_replay(lr, fr, desire=None, calib=None):
 
   spinner = Spinner()
   spinner.update("starting model replay")
 
-  pm = messaging.PubMaster(['frame', 'liveCalibration', 'pathPlan'])
-  sm = messaging.SubMaster(['model', 'modelV2'])
+  pm = messaging.PubMaster(['roadCameraState', 'liveCalibration', 'lateralPlan'])
+  sm = messaging.SubMaster(['modelV2'])
 
   # TODO: add dmonitoringmodeld
   print("preparing procs")
-  manager.prepare_managed_process("camerad")
-  manager.prepare_managed_process("modeld")
+  managed_processes['camerad'].prepare()
+  managed_processes['modeld'].prepare()
   try:
     print("starting procs")
-    manager.start_managed_process("camerad")
-    manager.start_managed_process("modeld")
+    managed_processes['camerad'].start()
+    managed_processes['modeld'].start()
     time.sleep(5)
     sm.update(1000)
     print("procs started")
 
-    desires_by_index = {v:k for k,v in log.PathPlan.Desire.schema.enumerants.items()}
+    desires_by_index = {v:k for k,v in log.LateralPlan.Desire.schema.enumerants.items()}
 
     cal = [msg for msg in lr if msg.which() == "liveCalibration"]
     for msg in cal[:5]:
@@ -60,21 +60,20 @@ def camera_replay(lr, fr, desire=None, calib=None):
     for msg in tqdm(lr):
       if msg.which() == "liveCalibration":
         pm.send(msg.which(), replace_calib(msg, calib))
-      elif msg.which() == "frame":
+      elif msg.which() == "roadCameraState":
         if desire is not None:
           for i in desire[frame_idx].nonzero()[0]:
-            dat = messaging.new_message('pathPlan')
-            dat.pathPlan.desire = desires_by_index[i]
-            pm.send('pathPlan', dat)
+            dat = messaging.new_message('lateralPlan')
+            dat.lateralPlan.desire = desires_by_index[i]
+            pm.send('lateralPlan', dat)
 
         f = msg.as_builder()
         img = fr.get(frame_idx, pix_fmt="rgb24")[0][:,:,::-1]
-        f.frame.image = img.flatten().tobytes()
+        f.roadCameraState.image = img.flatten().tobytes()
         frame_idx += 1
 
         pm.send(msg.which(), f)
         with Timeout(seconds=15):
-          log_msgs.append(messaging.recv_one(sm.sock['model']))
           log_msgs.append(messaging.recv_one(sm.sock['modelV2']))
 
         spinner.update("modeld replay %d/%d" % (frame_idx, fr.frame_count))
@@ -86,9 +85,9 @@ def camera_replay(lr, fr, desire=None, calib=None):
 
   print("replay done")
   spinner.close()
-  manager.kill_managed_process('modeld')
+  managed_processes['modeld'].stop()
   time.sleep(2)
-  manager.kill_managed_process('camerad')
+  managed_processes['camerad'].stop()
   return log_msgs
 
 if __name__ == "__main__":
@@ -109,8 +108,9 @@ if __name__ == "__main__":
     log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", ref_commit)
     cmp_log = LogReader(BASE_URL + log_fn)
 
-    ignore = ['logMonoTime', 'valid', 'model.frameDropPerc', 'model.modelExecutionTime',
-              'modelV2.frameDropPerc', 'modelV2.modelExecutionTime']
+    ignore = ['logMonoTime', 'valid',
+              'modelV2.frameDropPerc',
+              'modelV2.modelExecutionTime']
     results: Any = {TEST_ROUTE: {}}
     results[TEST_ROUTE]["modeld"] = compare_logs(cmp_log, log_msgs, ignore_fields=ignore)
     diff1, diff2, failed = format_diff(results, ref_commit)

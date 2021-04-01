@@ -2,7 +2,7 @@ import sys
 import termios
 import time
 from termios import (BRKINT, CS8, CSIZE, ECHO, ICANON, ICRNL, IEXTEN, INPCK,
-                     ISIG, ISTRIP, IXON, PARENB, VMIN, VTIME)
+                     ISTRIP, IXON, PARENB, VMIN, VTIME)
 from typing import Any
 
 # Indexes for termios list.
@@ -24,7 +24,7 @@ def getch():
     #mode[OFLAG] = mode[OFLAG] & ~(OPOST)
     mode[CFLAG] = mode[CFLAG] & ~(CSIZE | PARENB)
     mode[CFLAG] = mode[CFLAG] | CS8
-    mode[LFLAG] = mode[LFLAG] & ~(ECHO | ICANON | IEXTEN | ISIG)
+    mode[LFLAG] = mode[LFLAG] & ~(ECHO | ICANON | IEXTEN)
     mode[CC][VMIN] = 1
     mode[CC][VTIME] = 0
     termios.tcsetattr(fd, termios.TCSAFLUSH, mode)
@@ -44,6 +44,14 @@ def keyboard_poll_thread(q):
       q.put(str("cruise_down"))
     if c == '3':
       q.put(str("cruise_cancel"))
+    if c == 'w':
+      q.put(str("throttle_%f" % 1.0))
+    if c == 'a':
+      q.put(str("steer_%f" % 0.15))
+    if c == 's':
+      q.put(str("brake_%f" % 1.0))
+    if c == 'd':
+      q.put(str("steer_%f" % -0.15))
     if c == 'q':
       exit(0)
 

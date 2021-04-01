@@ -4,7 +4,7 @@ from libcpp cimport bool
 cdef extern from "selfdrive/common/params.cc":
   pass
 
-cdef extern from "selfdrive/common/util.c":
+cdef extern from "selfdrive/common/util.cc":
   pass
 
 cdef extern from "selfdrive/common/params.h":
@@ -12,5 +12,5 @@ cdef extern from "selfdrive/common/params.h":
     Params(bool)
     Params(string)
     string get(string, bool) nogil
-    int delete_db_value(string)
-    int write_db_value(string, string)
+    int remove(string)
+    int put(string, string)
