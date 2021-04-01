@@ -11,20 +11,15 @@ from smbus2 import SMBus
 import cereal.messaging as messaging
 from cereal import log
 from common.filter_simple import FirstOrderFilter
-from common.hardware import EON, HARDWARE, TICI
 from common.numpy_fast import clip, interp
 from common.params import Params
 from common.realtime import DT_TRML, sec_since_boot
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
+from selfdrive.hardware import EON, HARDWARE, TICI
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.pandad import get_expected_signature
 from selfdrive.swaglog import cloudlog
-from selfdrive.thermald.power_monitoring import (PowerMonitoring,
-                                                 get_battery_capacity,
-                                                 get_battery_current,
-                                                 get_battery_status,
-                                                 get_battery_voltage,
-                                                 get_usb_present)
+from selfdrive.thermald.power_monitoring import PowerMonitoring
 from selfdrive.version import get_git_branch, terms_version, training_version
 
 ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'ambient'])
@@ -257,11 +252,11 @@ def thermald_thread():
     msg.thermal.cpuPerc = int(round(psutil.cpu_percent()))
     msg.thermal.networkType = network_type
     msg.thermal.networkStrength = network_strength
-    msg.thermal.batteryPercent = get_battery_capacity()
-    msg.thermal.batteryStatus = get_battery_status()
-    msg.thermal.batteryCurrent = get_battery_current()
-    msg.thermal.batteryVoltage = get_battery_voltage()
-    msg.thermal.usbOnline = get_usb_present()
+    msg.thermal.batteryPercent = HARDWARE.get_battery_capacity()
+    msg.thermal.batteryStatus = HARDWARE.get_battery_status()
+    msg.thermal.batteryCurrent = HARDWARE.get_battery_current()
+    msg.thermal.batteryVoltage = HARDWARE.get_battery_voltage()
+    msg.thermal.usbOnline = HARDWARE.get_usb_present()
 
     # Fake battery levels on uno for frame
     if (not EON) or is_uno:
@@ -331,21 +326,22 @@ def thermald_thread():
 
       set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
       set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", False)
-      set_offroad_alert_if_changed("Offroad_UpdateFailed", True, extra_text=extra_text)
+      set_offroad_alert_if_changed("Offroad_UpdateFailed", False, extra_text=extra_text)
     elif dt.days > DAYS_NO_CONNECTIVITY_MAX and update_failed_count > 1:
       set_offroad_alert_if_changed("Offroad_UpdateFailed", False)
       set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", False)
-      set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", True)
+      set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
     elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
       remaining_time = str(max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 0))
       set_offroad_alert_if_changed("Offroad_UpdateFailed", False)
       set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
-      set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining_time} days.")
+      set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", False, extra_text=f"{remaining_time} days.")
     else:
       set_offroad_alert_if_changed("Offroad_UpdateFailed", False)
       set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
       set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", False)
 
+    startup_conditions["up_to_date"] = params.get("Offroad_ConnectivityNeeded") is None or params.get("DisableUpdates") == b"1"
     startup_conditions["not_uninstalling"] = not params.get("DoUninstall") == b"1"
     startup_conditions["accepted_terms"] = params.get("HasAcceptedTerms") == terms_version
 
